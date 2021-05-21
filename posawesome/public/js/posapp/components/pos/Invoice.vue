@@ -5,6 +5,8 @@
       class="cards my-0 py-0 grey lighten-5"
     >
       <Customer></Customer>
+      <TableServant v-if="is_restaurant_mood"/>
+
       <div class="my-0 py-0 overflow-y-auto" style="max-height: 55vh">
         <template @mouseover="style = 'cursor: pointer'">
           <v-data-table
@@ -490,7 +492,19 @@
             </v-col>
           </v-row>
           <v-row align="end" style="height: 54%">
-            <v-col cols="12">
+            <v-col v-if="print_before_pay">
+              <v-btn
+                block
+                class="pa-0"
+                large
+                color="primary"
+                @click="print_unpaid"
+                dark
+                >Print</v-btn
+              >
+            </v-col>
+
+            <v-col>
               <v-btn
                 block
                 class="pa-0"
@@ -509,19 +523,20 @@
 </template>
 
 <script>
-import { evntBus } from '../../bus';
-import Customer from './Customer.vue';
+import { evntBus } from "../../bus";
+import Customer from "./Customer.vue";
+import TableServant from "./TableServant.vue";
 export default {
   // props: ["pos_profile"],
   data() {
     return {
-      pos_profile: '',
-      pos_opening_shift: '',
-      stock_settings: '',
-      invoice_doc: '',
-      return_doc: '',
-      customer: '',
-      customer_info: '',
+      pos_profile: "",
+      pos_opening_shift: "",
+      stock_settings: "",
+      invoice_doc: "",
+      return_doc: "",
+      customer: "",
+      customer_info: "",
       discount_amount: 0,
       total_tax: 0,
       total: 0,
@@ -531,20 +546,21 @@ export default {
       singleExpand: true,
       items_headers: [
         {
-          text: 'Name',
-          align: 'start',
+          text: "Name",
+          align: "start",
           sortable: true,
-          value: 'item_name',
+          value: "item_name",
         },
-        { text: 'QTY', value: 'qty', align: 'center' },
-        { text: 'UOM', value: 'uom', align: 'center' },
-        { text: 'Rate', value: 'rate', align: 'center' },
-        { text: 'Amount', value: 'amount', align: 'center' },
+        { text: "QTY", value: "qty", align: "center" },
+        { text: "UOM", value: "uom", align: "center" },
+        { text: "Rate", value: "rate", align: "center" },
+        { text: "Amount", value: "amount", align: "center" },
       ],
     };
   },
   components: {
     Customer,
+    TableServant,
   },
   computed: {
     total_qty() {
@@ -571,6 +587,19 @@ export default {
       });
       return flt(sum).toFixed(2);
     },
+    print_before_pay() {
+      return (
+        this.customer &&
+        this.pos_profile.allow_print_before_pay &&
+        this.items.length
+      );
+    },
+    is_restaurant_mood(){
+      return (
+        this.pos_profile.restaurant_mood &&
+        this.pos_profile.dine_in
+      );
+    }
   },
   methods: {
     remove_item(item) {
@@ -623,9 +652,9 @@ export default {
             this.calc_sotck_gty(cur_item, cur_item.qty);
           } else {
             const new_item = this.get_new_item(cur_item);
-            new_item.batch_no = '';
-            new_item.batch_no_expiry_date = '';
-            new_item.actual_batch_qty = '';
+            new_item.batch_no = "";
+            new_item.batch_no_expiry_date = "";
+            new_item.actual_batch_qty = "";
             new_item.qty = item.qty || 1;
             this.items.unshift(new_item);
           }
@@ -644,7 +673,7 @@ export default {
       new_item.price_list_rate = item.rate;
       new_item.qty = item.qty;
       new_item.uom = item.uom ? item.uom : item.stock_uom;
-      new_item.actual_batch_qty = '';
+      new_item.actual_batch_qty = "";
       new_item.conversion_factor = 1;
       new_item.item_id = Date.now();
       if (new_item.has_batch_no || new_item.has_serial_no) {
@@ -656,14 +685,14 @@ export default {
       const doc = this.get_invoice_doc();
       if (doc.name && this.pos_profile.posa_allow_delete) {
         frappe.call({
-          method: 'posawesome.posawesome.api.posapp.delete_invoice',
+          method: "posawesome.posawesome.api.posapp.delete_invoice",
           args: { invoice: doc.name },
           async: true,
           callback: function (r) {
             if (r.message) {
-              evntBus.$emit('show_mesage', {
+              evntBus.$emit("show_mesage", {
                 text: r.message,
-                color: 'warning',
+                color: "warning",
               });
             }
           },
@@ -671,15 +700,15 @@ export default {
       }
       this.items = [];
       this.customer = this.pos_profile.customer;
-      this.invoice_doc = '';
-      this.return_doc = '';
+      this.invoice_doc = "";
+      this.return_doc = "";
       this.discount_amount = 0;
-      evntBus.$emit('set_customer_readonly', false);
+      evntBus.$emit("set_customer_readonly", false);
     },
     new_invoice(data = {}) {
-      evntBus.$emit('set_customer_readonly', false);
+      evntBus.$emit("set_customer_readonly", false);
       this.expanded = [];
-      this.return_doc = '';
+      this.return_doc = "";
       const doc = this.get_invoice_doc();
       if (doc.name) {
         this.update_invoice(doc);
@@ -691,11 +720,11 @@ export default {
       if (!data.name && !data.is_return) {
         this.items = [];
         this.customer = this.pos_profile.customer;
-        this.invoice_doc = '';
+        this.invoice_doc = "";
         this.discount_amount = 0;
       } else {
         if (data.is_return) {
-          evntBus.$emit('set_customer_readonly', true);
+          evntBus.$emit("set_customer_readonly", true);
         }
         this.invoice_doc = data;
         this.items = data.items;
@@ -710,7 +739,7 @@ export default {
         this.items.forEach((item) => {
           if (item.serial_no) {
             item.serial_no_selected = [];
-            const serial_list = item.serial_no.split('\n');
+            const serial_list = item.serial_no.split("\n");
             serial_list.forEach((element) => {
               if (element.length) {
                 item.serial_no_selected.push(element);
@@ -725,7 +754,7 @@ export default {
       const vm = this;
       const doc = this.get_invoice_doc();
       frappe.call({
-        method: 'posawesome.posawesome.api.posapp.save_draft_invoice',
+        method: "posawesome.posawesome.api.posapp.save_draft_invoice",
         args: { data: doc },
         async: false,
         callback: function (r) {
@@ -741,7 +770,7 @@ export default {
       if (this.invoice_doc.name) {
         doc = { ...this.invoice_doc };
       }
-      doc.doctype = 'Sales Invoice';
+      doc.doctype = "Sales Invoice";
       doc.is_pos = 1;
       doc.company = doc.company || this.pos_profile.company;
       doc.pos_profile = doc.pos_profile || this.pos_profile.name;
@@ -782,7 +811,7 @@ export default {
           amount: 0,
           mode_of_payment: payment.mode_of_payment,
           default: payment.default,
-          account: '',
+          account: "",
         });
       });
       return payments;
@@ -790,7 +819,7 @@ export default {
     update_invoice(doc) {
       const vm = this;
       frappe.call({
-        method: 'posawesome.posawesome.api.posapp.update_invoice',
+        method: "posawesome.posawesome.api.posapp.update_invoice",
         args: {
           data: doc,
         },
@@ -813,26 +842,26 @@ export default {
     },
     show_payment() {
       if (!this.customer) {
-        evntBus.$emit('show_mesage', {
+        evntBus.$emit("show_mesage", {
           text: `There is no Customer !`,
-          color: 'error',
+          color: "error",
         });
         return;
       }
       if (!this.items.length) {
-        evntBus.$emit('show_mesage', {
+        evntBus.$emit("show_mesage", {
           text: `There is no Items !`,
-          color: 'error',
+          color: "error",
         });
         return;
       }
       if (!this.validate()) {
         return;
       }
-      evntBus.$emit('show_payment', 'true');
+      evntBus.$emit("show_payment", "true");
       const invoice_doc = this.proces_invoice();
       invoice_doc.customer_info = this.customer_info;
-      evntBus.$emit('send_invoice_doc_payment', invoice_doc);
+      evntBus.$emit("send_invoice_doc_payment", invoice_doc);
     },
     validate() {
       let value = true;
@@ -842,9 +871,9 @@ export default {
           this.stock_settings.allow_negative_stock != 1
         ) {
           if (item.is_stock_item && item.stock_qty > item.actual_qty) {
-            evntBus.$emit('show_mesage', {
+            evntBus.$emit("show_mesage", {
               text: `The existing quantity of item ${item.item_name} is not enough`,
-              color: 'error',
+              color: "error",
             });
             value = false;
           }
@@ -854,18 +883,18 @@ export default {
             !item.serial_no_selected ||
             item.stock_qty != item.serial_no_selected.length
           ) {
-            evntBus.$emit('show_mesage', {
+            evntBus.$emit("show_mesage", {
               text: `Selcted serial numbers of item ${item.item_name} is incorrect`,
-              color: 'error',
+              color: "error",
             });
             value = false;
           }
         }
         if (item.has_batch_no) {
           if (item.stock_qty > item.actual_batch_qty) {
-            evntBus.$emit('show_mesage', {
+            evntBus.$emit("show_mesage", {
               text: `The existing batch quantity of item ${item.item_name} is not enough`,
-              color: 'error',
+              color: "error",
             });
             value = false;
           }
@@ -873,26 +902,26 @@ export default {
         if (this.pos_profile.posa_allow_user_to_edit_additional_discount) {
           const clac_percentage = (this.discount_amount / this.subtotal) * 100;
           if (clac_percentage > this.pos_profile.posa_max_discount_allowed) {
-            evntBus.$emit('show_mesage', {
+            evntBus.$emit("show_mesage", {
               text: `The discount should not be higher than ${this.pos_profile.posa_max_discount_allowed}%`,
-              color: 'error',
+              color: "error",
             });
             value = false;
           }
         }
         if (this.invoice_doc.is_return) {
           if (this.subtotal >= 0) {
-            evntBus.$emit('show_mesage', {
+            evntBus.$emit("show_mesage", {
               text: `Return Invoice Total Not Correct`,
-              color: 'error',
+              color: "error",
             });
             value = false;
             return value;
           }
           if (this.subtotal * -1 > this.return_doc.total) {
-            evntBus.$emit('show_mesage', {
+            evntBus.$emit("show_mesage", {
               text: `Return Invoice Total should not be higher than ${this.return_doc.total}`,
-              color: 'error',
+              color: "error",
             });
             value = false;
             return value;
@@ -903,16 +932,16 @@ export default {
             );
 
             if (!return_item) {
-              evntBus.$emit('show_mesage', {
+              evntBus.$emit("show_mesage", {
                 text: `The item ${item.item_name} cannot be returned because it is not in the invoice ${this.return_doc.name}`,
-                color: 'error',
+                color: "error",
               });
               value = false;
               return value;
             } else if (item.qty * -1 > return_item.qty || item.qty >= 0) {
-              evntBus.$emit('show_mesage', {
+              evntBus.$emit("show_mesage", {
                 text: `The QTY of the item ${item.item_name} cannot be greater than ${return_item.qty}`,
-                color: 'error',
+                color: "error",
               });
               value = false;
               return value;
@@ -925,23 +954,23 @@ export default {
     get_draft_invoices() {
       const vm = this;
       frappe.call({
-        method: 'posawesome.posawesome.api.posapp.get_draft_invoices',
+        method: "posawesome.posawesome.api.posapp.get_draft_invoices",
         args: {
           pos_opening_shift: this.pos_opening_shift.name,
         },
         async: false,
         callback: function (r) {
           if (r.message) {
-            evntBus.$emit('open_drafts', r.message);
+            evntBus.$emit("open_drafts", r.message);
           }
         },
       });
     },
     open_returns() {
-      evntBus.$emit('open_returns', this.pos_profile.company);
+      evntBus.$emit("open_returns", this.pos_profile.company);
     },
     close_payments() {
-      evntBus.$emit('show_payment', 'false');
+      evntBus.$emit("show_payment", "false");
     },
     update_items_details(items) {
       if (!items.length > 0) {
@@ -949,7 +978,7 @@ export default {
       }
       const vm = this;
       frappe.call({
-        method: 'posawesome.posawesome.api.posapp.get_items_details',
+        method: "posawesome.posawesome.api.posapp.get_items_details",
         args: {
           pos_profile: vm.pos_profile,
           items_data: items,
@@ -974,27 +1003,27 @@ export default {
     update_item_detail(item) {
       const vm = this;
       frappe.call({
-        method: 'posawesome.posawesome.api.posapp.get_item_detail',
+        method: "posawesome.posawesome.api.posapp.get_item_detail",
         args: {
           doc: this.get_invoice_doc(),
           data: {
             item_code: item.item_code,
             customer: this.customer,
-            doctype: 'Sales Invoice',
-            name: 'New Sales Invoice 1',
+            doctype: "Sales Invoice",
+            name: "New Sales Invoice 1",
             company: this.pos_profile.company,
             conversion_rate: 1,
             qty: item.qty,
             price_list_rate: item.price_list_rate,
-            child_docname: 'New Sales Invoice Item 1',
+            child_docname: "New Sales Invoice Item 1",
             cost_center: this.pos_profile.cost_center,
             currency: this.pos_profile.currency,
             // plc_conversion_rate: 1,
             pos_profile: this.pos_profile.name,
             price_list: this.pos_profile.selling_price_list,
             uom: item.uom,
-            tax_category: '',
-            transaction_type: 'selling',
+            tax_category: "",
+            transaction_type: "selling",
             update_stock: this.pos_profile.update_stock,
           },
         },
@@ -1033,18 +1062,18 @@ export default {
       if (this.customer) {
         return new Promise((resolve) => {
           frappe.db
-            .get_value('Customer', vm.customer, [
-              'email_id',
-              'mobile_no',
-              'image',
-              'loyalty_program',
+            .get_value("Customer", vm.customer, [
+              "email_id",
+              "mobile_no",
+              "image",
+              "loyalty_program",
             ])
             .then(({ message }) => {
               const { loyalty_program } = message;
               if (loyalty_program) {
                 frappe.call({
                   method:
-                    'erpnext.accounts.doctype.loyalty_program.loyalty_program.get_loyalty_program_details_with_points',
+                    "erpnext.accounts.doctype.loyalty_program.loyalty_program.get_loyalty_program_details_with_points",
                   args: {
                     customer: vm.customer,
                     loyalty_program,
@@ -1077,7 +1106,7 @@ export default {
       }
     },
     calc_prices(item, value, $event) {
-      if (event.target.id === 'rate') {
+      if (event.target.id === "rate") {
         item.discount_percentage = 0;
         if (value < item.price_list_rate) {
           item.discount_amount = (
@@ -1089,7 +1118,7 @@ export default {
         } else if (value > item.price_list_rate) {
           item.discount_amount = 0;
         }
-      } else if (event.target.id === 'discount_amount') {
+      } else if (event.target.id === "discount_amount") {
         if (value < 0) {
           item.discount_amount = 0;
           item.discount_percentage = 0;
@@ -1097,7 +1126,7 @@ export default {
           item.rate = flt(item.price_list_rate) - flt(value);
           item.discount_percentage = 0;
         }
-      } else if (event.target.id === 'discount_percentage') {
+      } else if (event.target.id === "discount_percentage") {
         if (value < 0) {
           item.discount_amount = 0;
           item.discount_percentage = 0;
@@ -1129,7 +1158,7 @@ export default {
         item.rate = (
           flt(item.price_list_rate) - flt(item.discount_amount)
         ).toFixed(2);
-      } else if (item.pricing_rule_for === 'Rate') {
+      } else if (item.pricing_rule_for === "Rate") {
         item.rate = item.price_list_rate;
       }
     },
@@ -1149,15 +1178,15 @@ export default {
       item.stock_qty = item.conversion_factor * value;
     },
     set_serial_no(item) {
-      item.serial_no = '';
+      item.serial_no = "";
       item.serial_no_selected.forEach((element) => {
-        item.serial_no += element + '\n';
+        item.serial_no += element + "\n";
       });
       item.serial_no_selected_count = item.serial_no_selected.length;
       if (item.serial_no_selected_count != item.stock_qty) {
-        evntBus.$emit('show_mesage', {
+        evntBus.$emit("show_mesage", {
           text: `Selected Serial No QTY is ${item.serial_no_selected_count} it should be ${item.stock_qty}`,
-          color: 'warning',
+          color: "warning",
         });
       }
     },
@@ -1179,7 +1208,7 @@ export default {
     set_customer_info(field, value) {
       const vm = this;
       frappe.call({
-        method: 'posawesome.posawesome.api.posapp.set_customer_info',
+        method: "posawesome.posawesome.api.posapp.set_customer_info",
         args: {
           fieldname: field,
           customer: this.customer_info.customer,
@@ -1188,86 +1217,112 @@ export default {
         callback: (r) => {
           if (!r.exc) {
             vm.customer_info[field] = value;
-            evntBus.$emit('show_mesage', {
-              text: 'Customer contact updated successfully.',
-              color: 'success',
+            evntBus.$emit("show_mesage", {
+              text: "Customer contact updated successfully.",
+              color: "success",
             });
-            frappe.utils.play_sound('submit');
+            frappe.utils.play_sound("submit");
           }
         },
       });
     },
     formtCurrency(value) {
       value = parseFloat(value);
-      return value.toFixed(2).replace(/\d(?=(\d{3})+\.)/g, '$&,');
+      return value.toFixed(2).replace(/\d(?=(\d{3})+\.)/g, "$&,");
     },
     shortOpenPayment(e) {
-      if (e.key === 's' && (e.ctrlKey || e.metaKey)) {
+      if (e.key === "s" && (e.ctrlKey || e.metaKey)) {
         e.preventDefault();
         this.show_payment();
       }
     },
     shortDeleteFirstItem(e) {
-      if (e.key === 'd' && (e.ctrlKey || e.metaKey)) {
+      if (e.key === "d" && (e.ctrlKey || e.metaKey)) {
         e.preventDefault();
         this.remove_item(this.items[0]);
       }
     },
     shortOpenFirstItem(e) {
-      if (e.key === 'a' && (e.ctrlKey || e.metaKey)) {
+      if (e.key === "a" && (e.ctrlKey || e.metaKey)) {
         e.preventDefault();
         this.expanded = [];
         this.expanded.push(this.items[0]);
       }
     },
     shortSelectDiscount(e) {
-      if (e.key === 'z' && (e.ctrlKey || e.metaKey)) {
+      if (e.key === "z" && (e.ctrlKey || e.metaKey)) {
         e.preventDefault();
         this.$refs.discount.focus();
       }
     },
+    print_unpaid(e) {
+      this.show_payment();
+
+      let invoice_copy = 1;
+
+      if (this.pos_profile.invoice_copy && this.pos_profile.invoice_copy > 1) {
+        invoice_copy = this.pos_profile.invoice_copy;
+      }
+
+      for (var i = 0; i < invoice_copy; i++) {
+        const print_format =
+          this.pos_profile.print_format_for_online ||
+          this.pos_profile.print_format;
+        const letter_head = this.pos_profile.letter_head || 0;
+        const url =
+          frappe.urllib.get_base_url() +
+          "/printview?doctype=Sales%20Invoice&name=" +
+          this.invoice_doc.name +
+          "&trigger_print=1" +
+          "&format=" +
+          print_format +
+          "&no_letterhead=" +
+          letter_head;
+        window.open(url, i);
+      }
+    },
   },
   created() {
-    evntBus.$on('register_pos_profile', (data) => {
+    evntBus.$on("register_pos_profile", (data) => {
       this.pos_profile = data.pos_profile;
       this.customer = data.pos_profile.customer;
       this.pos_opening_shift = data.pos_opening_shift;
       this.stock_settings = data.stock_settings;
     });
-    evntBus.$on('add_item', (item) => {
+    evntBus.$on("add_item", (item) => {
       this.add_item(item);
     });
-    evntBus.$on('update_customer', (customer) => {
+    evntBus.$on("update_customer", (customer) => {
       this.customer = customer;
     });
-    evntBus.$on('new_invoice', () => {
-      this.invoice_doc = '';
+    evntBus.$on("new_invoice", () => {
+      this.invoice_doc = "";
       this.cancel_invoice();
     });
-    evntBus.$on('load_invoice', (data) => {
+    evntBus.$on("load_invoice", (data) => {
       this.new_invoice(data);
     });
-    evntBus.$on('load_return_invoice', (data) => {
+    evntBus.$on("load_return_invoice", (data) => {
       this.new_invoice(data.invoice_doc);
       this.discount_amount = -data.return_doc.discount_amount;
       console.log(data);
       this.return_doc = data.return_doc;
     });
-    document.addEventListener('keydown', this.shortOpenPayment.bind(this));
-    document.addEventListener('keydown', this.shortDeleteFirstItem.bind(this));
-    document.addEventListener('keydown', this.shortOpenFirstItem.bind(this));
-    document.addEventListener('keydown', this.shortSelectDiscount.bind(this));
+    document.addEventListener("keydown", this.shortOpenPayment.bind(this));
+    document.addEventListener("keydown", this.shortDeleteFirstItem.bind(this));
+    document.addEventListener("keydown", this.shortOpenFirstItem.bind(this));
+    document.addEventListener("keydown", this.shortSelectDiscount.bind(this));
   },
   destroyed() {
-    document.removeEventListener('keydown', this.shortOpenPayment);
-    document.removeEventListener('keydown', this.shortDeleteFirstItem);
-    document.removeEventListener('keydown', this.shortOpenFirstItem);
-    document.removeEventListener('keydown', this.shortSelectDiscount);
+    document.removeEventListener("keydown", this.shortOpenPayment);
+    document.removeEventListener("keydown", this.shortDeleteFirstItem);
+    document.removeEventListener("keydown", this.shortOpenFirstItem);
+    document.removeEventListener("keydown", this.shortSelectDiscount);
   },
   watch: {
     customer() {
       this.close_payments();
-      evntBus.$emit('set_customer', this.customer);
+      evntBus.$emit("set_customer", this.customer);
       this.fetch_customer_details();
     },
     expanded(data_value) {

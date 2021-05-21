@@ -769,3 +769,22 @@ def get_app_branch(app):
         return branch
     except Exception:
         return ""
+
+
+@frappe.whitelist()
+def get_table_names(pos_profile = None):
+    if not pos_profile:
+        return []
+    
+    tables = frappe.get_list("POS Table", {"parent": pos_profile}, ["*"])
+
+    return tables
+
+@frappe.whitelist()
+def get_servant_names(pos_profile = None):
+    if not pos_profile:
+        return []
+    
+    servants = frappe.get_list("Servant", {"parent": pos_profile}, ["*"])
+
+    return servants

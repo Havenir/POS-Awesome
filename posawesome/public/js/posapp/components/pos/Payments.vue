@@ -396,12 +396,12 @@
 </template>
 
 <script>
-import { evntBus } from '../../bus';
+import { evntBus } from "../../bus";
 export default {
   data: () => ({
     loading: false,
-    pos_profile: '',
-    invoice_doc: '',
+    pos_profile: "",
+    invoice_doc: "",
     loyalty_amount: 0,
     is_credit_sale: 0,
     date_menu: false,
@@ -415,16 +415,16 @@ export default {
 
   methods: {
     back_to_invoice() {
-      evntBus.$emit('show_payment', 'false');
-      evntBus.$emit('set_customer_readonly', false);
+      evntBus.$emit("show_payment", "false");
+      evntBus.$emit("set_customer_readonly", false);
     },
     submit() {
       if (!this.invoice_doc.is_return && this.total_payments < 0) {
-        evntBus.$emit('show_mesage', {
+        evntBus.$emit("show_mesage", {
           text: `Payments not correct`,
-          color: 'error',
+          color: "error",
         });
-        frappe.utils.play_sound('error');
+        frappe.utils.play_sound("error");
         return;
       }
 
@@ -432,11 +432,11 @@ export default {
         !this.pos_profile.posa_allow_partial_payment &&
         this.total_payments < this.invoice_doc.grand_total
       ) {
-        evntBus.$emit('show_mesage', {
+        evntBus.$emit("show_mesage", {
           text: `The amount paid is not complete`,
-          color: 'error',
+          color: "error",
         });
-        frappe.utils.play_sound('error');
+        frappe.utils.play_sound("error");
         return;
       }
 
@@ -445,22 +445,22 @@ export default {
         !this.pos_profile.posa_allow_credit_sale &&
         this.total_payments == 0
       ) {
-        evntBus.$emit('show_mesage', {
+        evntBus.$emit("show_mesage", {
           text: `Please enter the amount paid`,
-          color: 'error',
+          color: "error",
         });
-        frappe.utils.play_sound('error');
+        frappe.utils.play_sound("error");
         return;
       }
 
       if (!this.paid_change) this.paid_change = 0;
 
       if (this.paid_change > -this.diff_payment) {
-        evntBus.$emit('show_mesage', {
+        evntBus.$emit("show_mesage", {
           text: `Paid change can not be greater than total change!`,
-          color: 'error',
+          color: "error",
         });
-        frappe.utils.play_sound('error');
+        frappe.utils.play_sound("error");
         return;
       }
 
@@ -468,11 +468,11 @@ export default {
         parseInt(this.paid_change) + parseInt(-this.credit_change);
 
       if (this.is_cashback && total_change != -this.diff_payment) {
-        evntBus.$emit('show_mesage', {
+        evntBus.$emit("show_mesage", {
           text: `Error in change calculations!`,
-          color: 'error',
+          color: "error",
         });
-        frappe.utils.play_sound('error');
+        frappe.utils.play_sound("error");
         return;
       }
 
@@ -483,11 +483,11 @@ export default {
       });
 
       if (credit_calc_check.length > 0) {
-        evntBus.$emit('show_mesage', {
+        evntBus.$emit("show_mesage", {
           text: `redeamed credit can not greater than its total.`,
-          color: 'error',
+          color: "error",
         });
-        frappe.utils.play_sound('error');
+        frappe.utils.play_sound("error");
         return;
       }
 
@@ -495,11 +495,11 @@ export default {
         !this.invoice_doc.is_return &&
         this.redeemed_customer_credit > this.invoice_doc.grand_total
       ) {
-        evntBus.$emit('show_mesage', {
+        evntBus.$emit("show_mesage", {
           text: `can not redeam customer credit more than invoice total`,
-          color: 'error',
+          color: "error",
         });
-        frappe.utils.play_sound('error');
+        frappe.utils.play_sound("error");
         return;
       }
 
@@ -508,21 +508,21 @@ export default {
       this.redeem_customer_credit = false;
       this.is_cashback = true;
 
-      evntBus.$emit('new_invoice', 'false');
+      evntBus.$emit("new_invoice", "false");
       this.back_to_invoice();
     },
     submit_invoice() {
       let formData = this.invoice_doc;
-      formData['total_change'] = -this.diff_payment;
-      formData['paid_change'] = this.paid_change;
-      formData['credit_change'] = -this.credit_change;
-      formData['redeemed_customer_credit'] = this.redeemed_customer_credit;
-      formData['customer_credit_dict'] = this.customer_credit_dict;
-      formData['is_cashback'] = this.is_cashback;
+      formData["total_change"] = -this.diff_payment;
+      formData["paid_change"] = this.paid_change;
+      formData["credit_change"] = -this.credit_change;
+      formData["redeemed_customer_credit"] = this.redeemed_customer_credit;
+      formData["customer_credit_dict"] = this.customer_credit_dict;
+      formData["is_cashback"] = this.is_cashback;
 
       const vm = this;
       frappe.call({
-        method: 'posawesome.posawesome.api.posapp.submit_invoice',
+        method: "posawesome.posawesome.api.posapp.submit_invoice",
         args: {
           data: formData,
         },
@@ -530,11 +530,11 @@ export default {
         callback: function (r) {
           if (r.message) {
             vm.load_print_page();
-            evntBus.$emit('show_mesage', {
+            evntBus.$emit("show_mesage", {
               text: `Invoice ${r.message.name} is Submited`,
-              color: 'success',
+              color: "success",
             });
-            frappe.utils.play_sound('submit');
+            frappe.utils.play_sound("submit");
           }
         },
       });
@@ -556,29 +556,46 @@ export default {
       });
     },
     load_print_page() {
-      const print_format =
-        this.pos_profile.print_format_for_online ||
-        this.pos_profile.print_format;
-      const letter_head = this.pos_profile.letter_head || 0;
-      const url =
-        frappe.urllib.get_base_url() +
-        '/printview?doctype=Sales%20Invoice&name=' +
-        this.invoice_doc.name +
-        '&trigger_print=1' +
-        '&format=' +
-        print_format +
-        '&no_letterhead=' +
-        letter_head;
-      const printWindow = window.open(url, 'Print');
-      printWindow.addEventListener(
-        'load',
-        function () {
-          printWindow.print();
-          // printWindow.close();
-          // NOTE : uncomoent this to auto closing printing window
-        },
-        true
-      );
+      if (this.pos_profile.print_after_submit) {
+        let invoice_copy = 1;
+
+        if (
+          this.pos_profile.invoice_copy &&
+          this.pos_profile.invoice_copy > 1
+        ) {
+          invoice_copy = this.pos_profile.invoice_copy;
+        }
+
+        for (var i = 0; i < invoice_copy; i++) {
+          const print_format =
+            this.pos_profile.print_format_for_online ||
+            this.pos_profile.print_format;
+
+          const letter_head = this.pos_profile.letter_head || 0;
+          const url =
+            frappe.urllib.get_base_url() +
+            "/printview?doctype=Sales%20Invoice&name=" +
+            this.invoice_doc.name +
+            "&trigger_print=1" +
+            "&format=" +
+            print_format +
+            "&no_letterhead=" +
+            letter_head;
+          const printWindow = window.open(url, i);
+
+          if (!this.pos_profile.debug_invoice) { 
+            printWindow.addEventListener(
+              "load",
+              function () {
+                printWindow.print();
+                //printWindow.close();
+                // NOTE : uncomoent this to auto closing printing window
+              },
+              true
+            );
+          }
+        }
+      }
     },
     validate_due_date() {
       const today = frappe.datetime.now_date();
@@ -592,10 +609,10 @@ export default {
     },
     formtCurrency(value) {
       value = parseFloat(value);
-      return value.toFixed(2).replace(/\d(?=(\d{3})+\.)/g, '$&,');
+      return value.toFixed(2).replace(/\d(?=(\d{3})+\.)/g, "$&,");
     },
     shortPay(e) {
-      if (e.key === 'x' && (e.ctrlKey || e.metaKey)) {
+      if (e.key === "x" && (e.ctrlKey || e.metaKey)) {
         e.preventDefault();
         this.submit();
       }
@@ -607,7 +624,7 @@ export default {
       let change = -this.diff_payment;
       if (this.paid_change > change) {
         this.paid_change_rules = [
-          'Paid change can not be greater than total change!',
+          "Paid change can not be greater than total change!",
         ];
         this.credit_change = 0;
       }
@@ -616,7 +633,7 @@ export default {
       if (e) {
         frappe
           .call(
-            'posawesome.posawesome.api.posapp_customization.get_available_credit',
+            "posawesome.posawesome.api.posapp_customization.get_available_credit",
             {
               customer: this.invoice_doc.customer,
             }
@@ -661,7 +678,7 @@ export default {
       return (this.paid_change - change).toFixed(2);
     },
     diff_lable() {
-      let lable = this.diff_payment < 0 ? 'Change' : 'To Be Paid';
+      let lable = this.diff_payment < 0 ? "Change" : "To Be Paid";
       return lable;
     },
     available_pioints_amount() {
@@ -694,7 +711,7 @@ export default {
 
   created: function () {
     this.$nextTick(function () {
-      evntBus.$on('send_invoice_doc_payment', (invoice_doc) => {
+      evntBus.$on("send_invoice_doc_payment", (invoice_doc) => {
         this.invoice_doc = invoice_doc;
         const default_payment = this.invoice_doc.payments.find(
           (payment) => payment.default == 1
@@ -705,22 +722,22 @@ export default {
         }
         this.loyalty_amount = 0;
       });
-      evntBus.$on('register_pos_profile', (data) => {
+      evntBus.$on("register_pos_profile", (data) => {
         this.pos_profile = data.pos_profile;
       });
     });
-    evntBus.$on('update_customer', (customer) => {
+    evntBus.$on("update_customer", (customer) => {
       if (this.customer != customer) {
         this.customer_credit_dict = [];
         this.redeem_customer_credit = false;
         this.is_cashback = true;
       }
     });
-    document.addEventListener('keydown', this.shortPay.bind(this));
+    document.addEventListener("keydown", this.shortPay.bind(this));
   },
 
   destroyed() {
-    document.removeEventListener('keydown', this.shortPay);
+    document.removeEventListener("keydown", this.shortPay);
   },
 
   watch: {
@@ -729,9 +746,9 @@ export default {
         this.invoice_doc.loyalty_amount = 0;
         this.invoice_doc.redeem_loyalty_points = 0;
         this.invoice_doc.loyalty_points = 0;
-        evntBus.$emit('show_mesage', {
+        evntBus.$emit("show_mesage", {
           text: `Loyalty Amount can not be more then ${this.available_pioints_amount}`,
-          color: 'error',
+          color: "error",
         });
       } else {
         this.invoice_doc.loyalty_amount = flt(this.loyalty_amount);
@@ -751,9 +768,9 @@ export default {
     },
     redeemed_customer_credit(value) {
       if (value > this.available_customer_credit) {
-        evntBus.$emit('show_mesage', {
+        evntBus.$emit("show_mesage", {
           text: `You can redeem customer credit upto ${this.available_customer_credit}`,
-          color: 'error',
+          color: "error",
         });
       }
     },
