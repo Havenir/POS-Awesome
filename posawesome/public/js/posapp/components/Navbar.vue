@@ -12,6 +12,15 @@
 
       <v-spacer></v-spacer>
 
+      <div class="text-center mt-5">
+        <v-switch
+          v-model="offline_pos"
+          flat
+          label="Offline POS"
+          class="mt-2"
+        ></v-switch>
+      </div>
+
       <div class="text-center">
         <v-menu offset-y>
           <template v-slot:activator="{ on, attrs }">
@@ -120,7 +129,7 @@
 </template>
 
 <script>
-import { evntBus } from '../bus';
+import { evntBus } from "../bus";
 
 export default {
   // components: {MyPopup},
@@ -129,38 +138,44 @@ export default {
       drawer: true,
       mini: true,
       item: 0,
-      items: [{ text: 'POS', icon: 'mdi-point-of-sale' }],
-      page: '',
+      items: [{ text: "POS", icon: "mdi-point-of-sale" }],
+      page: "",
       fav: true,
       menu: false,
       message: false,
       hints: true,
       menu_item: 0,
       snack: false,
-      snackColor: '',
-      snackText: '',
-      company: 'POS Awesome',
-      company_img: '/assets/erpnext/images/erp-icon.svg',
-      pos_profile: '',
+      snackColor: "",
+      snackText: "",
+      company: "POS Awesome",
+      company_img: "/assets/erpnext/images/erp-icon.svg",
+      pos_profile: "",
+      offline_pos: JSON.parse(localStorage.getItem("offline_pos")),
     };
+  },
+  watch: {
+    offline_pos(val) {
+      localStorage.setItem("offline_pos", val);
+    },
   },
   methods: {
     changePage(key) {
-      this.$emit('changePage', key);
+      this.$emit("changePage", key);
     },
     go_desk() {
-      frappe.set_route('');
+      frappe.set_route("");
       location.reload();
     },
     go_about() {
       const win = window.open(
-        'https://github.com/yrestom/POS-Awesome',
-        '_blank'
+        "https://github.com/yrestom/POS-Awesome",
+        "_blank"
       );
       win.focus();
     },
     close_shift_dialog() {
-      evntBus.$emit('open_closing_dialog');
+      evntBus.$emit("open_closing_dialog");
     },
     show_mesage(data) {
       this.snack = true;
@@ -170,16 +185,16 @@ export default {
   },
   created: function () {
     this.$nextTick(function () {
-      evntBus.$on('show_mesage', (data) => {
+      evntBus.$on("show_mesage", (data) => {
         this.show_mesage(data);
       });
-      evntBus.$on('set_company', (data) => {
+      evntBus.$on("set_company", (data) => {
         this.company = data.name;
         this.company_img = data.company_logo
           ? data.company_logo
           : this.company_img;
       });
-      evntBus.$on('register_pos_profile', (data) => {
+      evntBus.$on("register_pos_profile", (data) => {
         this.pos_profile = data.pos_profile;
       });
     });

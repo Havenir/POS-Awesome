@@ -6,10 +6,26 @@
     <NewCustomer></NewCustomer>
     <OpeningDialog v-if="dialog" :dialog="dialog"></OpeningDialog>
     <v-row v-show="!dialog">
-      <v-col v-show="!payment" xl="5" lg="6" md="6" sm="6" cols="12" class="pos pr-0">
+      <v-col
+        v-show="!payment"
+        xl="5"
+        lg="6"
+        md="6"
+        sm="6"
+        cols="12"
+        class="pos pr-0"
+      >
         <ItemsSelector></ItemsSelector>
       </v-col>
-      <v-col v-show="payment" xl="5" lg="6" md="6" sm="6" cols="12" class="pos pr-0">
+      <v-col
+        v-show="payment"
+        xl="5"
+        lg="6"
+        md="6"
+        sm="6"
+        cols="12"
+        class="pos pr-0"
+      >
         <Payments></Payments>
       </v-col>
       <v-col xl="7" lg="6" md="6" sm="6" cols="12" class="pos">
@@ -18,7 +34,6 @@
     </v-row>
   </div>
 </template>
-
 
 <script>
 import { evntBus } from "../../bus";
@@ -38,6 +53,7 @@ export default {
       pos_profile: "",
       pos_opening_shift: "",
       payment: false,
+      offline_pos: JSON.parse(localStorage.getItem("offline_pos")),
     };
   },
 
@@ -73,33 +89,39 @@ export default {
     create_opening_voucher() {
       this.dialog = true;
     },
-     get_closing_data() {
+    get_closing_data() {
       return frappe
-        .call("posawesome.posawesome.doctype.pos_closing_shift.pos_closing_shift.make_closing_shift_from_opening", {
-          opening_shift: this.pos_opening_shift,
-        })
+        .call(
+          "posawesome.posawesome.doctype.pos_closing_shift.pos_closing_shift.make_closing_shift_from_opening",
+          {
+            opening_shift: this.pos_opening_shift,
+          }
+        )
         .then((r) => {
           if (r.message) {
-            evntBus.$emit("open_ClosingDialog",r.message);
+            evntBus.$emit("open_ClosingDialog", r.message);
           } else {
-            console.log(r)
+            console.log(r);
           }
         });
     },
-    submit_closing_pos(data){
+    submit_closing_pos(data) {
       frappe
-        .call("posawesome.posawesome.doctype.pos_closing_shift.pos_closing_shift.submit_closing_shift", {
-          closing_shift: data,
-        })
+        .call(
+          "posawesome.posawesome.doctype.pos_closing_shift.pos_closing_shift.submit_closing_shift",
+          {
+            closing_shift: data,
+          }
+        )
         .then((r) => {
           if (r.message) {
             evntBus.$emit("show_mesage", {
               text: `POS Shift Closed`,
               color: "success",
             });
-            this.check_opening_entry()
+            this.check_opening_entry();
           } else {
-            console.log(r)
+            console.log(r);
           }
         });
     },
@@ -118,19 +140,18 @@ export default {
         console.log("LoadPosProfile");
       });
       evntBus.$on("show_payment", (data) => {
-        this.payment = true ? data ==="true": false;
+        this.payment = true ? data === "true" : false;
         // evntBus.$emit("update_cur_items_details");
-      })
+      });
       evntBus.$on("open_closing_dialog", () => {
-        this.get_closing_data()
-      })
+        this.get_closing_data();
+      });
       evntBus.$on("submit_closing_pos", (data) => {
-        this.submit_closing_pos(data)
-      })
+        this.submit_closing_pos(data);
+      });
     });
   },
 };
-</script> 
+</script>
 
-<style scoped>
-</style>
+<style scoped></style>

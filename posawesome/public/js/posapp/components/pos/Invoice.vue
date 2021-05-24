@@ -556,6 +556,7 @@ export default {
         { text: "Rate", value: "rate", align: "center" },
         { text: "Amount", value: "amount", align: "center" },
       ],
+      offline_pos: JSON.parse(localStorage.getItem("offline_pos")),
     };
   },
   components: {

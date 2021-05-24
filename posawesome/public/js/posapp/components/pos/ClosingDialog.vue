@@ -63,7 +63,7 @@
 </template>
 
 <script>
-import { evntBus } from '../../bus';
+import { evntBus } from "../../bus";
 export default {
   data: () => ({
     closingDialog: false,
@@ -71,38 +71,39 @@ export default {
     dialog_data: {},
     headers: [
       {
-        text: 'Mode of Payment',
-        value: 'mode_of_payment',
-        align: 'start',
+        text: "Mode of Payment",
+        value: "mode_of_payment",
+        align: "start",
         sortable: true,
       },
       {
-        text: 'Opening Amount',
-        align: 'end',
+        text: "Opening Amount",
+        align: "end",
         sortable: true,
-        value: 'opening_amount',
+        value: "opening_amount",
       },
       {
-        text: 'Closing Amount',
-        value: 'closing_amount',
-        align: 'end',
+        text: "Closing Amount",
+        value: "closing_amount",
+        align: "end",
         sortable: true,
       },
       {
-        text: 'Expected Amount',
-        value: 'expected_amount',
-        align: 'end',
+        text: "Expected Amount",
+        value: "expected_amount",
+        align: "end",
         sortable: false,
       },
       {
-        text: 'Difference',
-        value: 'difference',
-        align: 'end',
+        text: "Difference",
+        value: "difference",
+        align: "end",
         sortable: false,
       },
     ],
-    max25chars: (v) => v.length <= 20 || 'Input too long!', // TODO : should validate as number
+    max25chars: (v) => v.length <= 20 || "Input too long!", // TODO : should validate as number
     pagination: {},
+    offline_pos: JSON.parse(localStorage.getItem("offline_pos")),
   }),
   watch: {},
   methods: {
@@ -111,16 +112,16 @@ export default {
     },
 
     submit_dialog() {
-      evntBus.$emit('submit_closing_pos', this.dialog_data);
+      evntBus.$emit("submit_closing_pos", this.dialog_data);
       this.closingDialog = false;
     },
     formtCurrency(value) {
       value = parseFloat(value);
-      return value.toFixed(2).replace(/\d(?=(\d{3})+\.)/g, '$&,');
+      return value.toFixed(2).replace(/\d(?=(\d{3})+\.)/g, "$&,");
     },
   },
   created: function () {
-    evntBus.$on('open_ClosingDialog', (data) => {
+    evntBus.$on("open_ClosingDialog", (data) => {
       this.closingDialog = true;
       this.dialog_data = data;
     });

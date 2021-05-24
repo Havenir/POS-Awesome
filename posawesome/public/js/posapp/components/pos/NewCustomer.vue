@@ -74,6 +74,7 @@ export default {
     tax_id: "",
     mobile_no: "",
     email_id: "",
+    offline_pos: JSON.parse(localStorage.getItem("offline_pos")),
   }),
   watch: {},
   methods: {
@@ -85,10 +86,10 @@ export default {
       if (this.customer_name) {
         const vm = this;
         const args = {
-            customer_name: this.customer_name,
-            tax_id: this.tax_id,
-            mobile_no: this.mobile_no,
-            email_id: this.email_id,
+          customer_name: this.customer_name,
+          tax_id: this.tax_id,
+          mobile_no: this.mobile_no,
+          email_id: this.email_id,
         };
         frappe.call({
           method: "posawesome.posawesome.api.posapp.create_customer",
@@ -99,7 +100,7 @@ export default {
                 text: "Customer contact created successfully.",
                 color: "success",
               });
-              args.name = r.message.name
+              args.name = r.message.name;
               frappe.utils.play_sound("submit");
               evntBus.$emit("add_customer_to_list", args);
               evntBus.$emit("set_customer", r.message.name);
@@ -116,6 +117,14 @@ export default {
   },
   created: function () {
     evntBus.$on("open_new_customer", () => {
+      if (this.offline_pos) {
+        evntBus.$emit("show_mesage", {
+          text: `You are Offline`,
+          color: "error",
+        });
+        return;
+      }
+
       this.customerDialog = true;
     });
   },

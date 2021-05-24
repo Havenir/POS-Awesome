@@ -100,6 +100,7 @@ export default {
     snack: false, // TODO : need to remove
     snackColor: '', // TODO : need to remove
     snackText: '', // TODO : need to remove
+    offline_pos: JSON.parse(localStorage.getItem("offline_pos")),
   }),
   watch: {
     company(val) {

@@ -63,41 +63,42 @@
 </template>
 
 <script>
-import { evntBus } from '../../bus';
+import { evntBus } from "../../bus";
 export default {
   data: () => ({
     invoicesDialog: false,
     singleSelect: true,
     selected: [],
-    dialog_data: '',
-    company: '',
-    invoice_name: '',
+    dialog_data: "",
+    company: "",
+    invoice_name: "",
     headers: [
       {
-        text: 'Customer',
-        value: 'customer',
-        align: 'start',
+        text: "Customer",
+        value: "customer",
+        align: "start",
         sortable: true,
       },
       {
-        text: 'Date',
-        align: 'start',
+        text: "Date",
+        align: "start",
         sortable: true,
-        value: 'posting_date',
+        value: "posting_date",
       },
       {
-        text: 'Invoice',
-        value: 'name',
-        align: 'start',
+        text: "Invoice",
+        value: "name",
+        align: "start",
         sortable: true,
       },
       {
-        text: 'Amount',
-        value: 'grand_total',
-        align: 'start',
+        text: "Amount",
+        value: "grand_total",
+        align: "start",
         sortable: false,
       },
     ],
+    offline_pos: JSON.parse(localStorage.getItem("offline_pos")),
   }),
   watch: {},
   methods: {
@@ -112,7 +113,7 @@ export default {
     search_invoices() {
       const vm = this;
       frappe.call({
-        method: 'posawesome.posawesome.api.posapp.search_invoices_for_return',
+        method: "posawesome.posawesome.api.posapp.search_invoices_for_return",
         args: {
           invoice_name: vm.invoice_name,
           company: vm.company,
@@ -142,21 +143,29 @@ export default {
         invoice_doc.return_against = return_doc.name;
         invoice_doc.customer = return_doc.customer;
         const data = { invoice_doc, return_doc };
-        evntBus.$emit('load_return_invoice', data);
+        evntBus.$emit("load_return_invoice", data);
         this.invoicesDialog = false;
       }
     },
     formtCurrency(value) {
       value = parseFloat(value);
-      return value.toFixed(2).replace(/\d(?=(\d{3})+\.)/g, '$&,');
+      return value.toFixed(2).replace(/\d(?=(\d{3})+\.)/g, "$&,");
     },
   },
   created: function () {
-    evntBus.$on('open_returns', (data) => {
+    evntBus.$on("open_returns", (data) => {
+      if (this.offline_pos) {
+        evntBus.$emit("show_mesage", {
+          text: `You are Offline`,
+          color: "error",
+        });
+        return;
+      }
+
       this.invoicesDialog = true;
       this.company = data;
-      this.invoice_name = '';
-      this.dialog_data = '';
+      this.invoice_name = "";
+      this.dialog_data = "";
       this.selected = [];
     });
   },

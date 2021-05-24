@@ -55,32 +55,36 @@
 </template>
 
 <script>
-import { evntBus } from '../../bus';
+import { evntBus } from "../../bus";
 export default {
   data: () => ({
-    pos_profile: '',
+    pos_profile: "",
     customers: [],
-    customer: '',
+    customer: "",
     readonly: false,
+    offline_pos: JSON.parse(localStorage.getItem("offline_pos")),
   }),
 
   methods: {
     get_customer_names() {
       const vm = this;
       if (vm.pos_profile.posa_local_storage && localStorage.customer_storage) {
-        vm.customers = JSON.parse(localStorage.getItem('customer_storage'));
+        vm.customers = JSON.parse(localStorage.getItem("customer_storage"));
       }
+
+      if (vm.customers.length && this.offline_pos) return;
+
       frappe.call({
-        method: 'posawesome.posawesome.api.posapp.get_customer_names',
+        method: "posawesome.posawesome.api.posapp.get_customer_names",
         args: {},
         callback: function (r) {
           if (r.message) {
             vm.customers = r.message;
-            console.log('loadCustomers');
+            console.log("loadCustomers");
             if (vm.pos_profile.posa_local_storage) {
-              localStorage.setItem('customer_storage', '');
+              localStorage.setItem("customer_storage", "");
               localStorage.setItem(
-                'customer_storage',
+                "customer_storage",
                 JSON.stringify(r.message)
               );
             }
@@ -89,15 +93,15 @@ export default {
       });
     },
     new_customer() {
-      evntBus.$emit('open_new_customer');
+      evntBus.$emit("open_new_customer");
     },
     customFilter(item, queryText, itemText) {
       const textOne = item.customer_name
         ? item.customer_name.toLowerCase()
-        : '';
-      const textTwo = item.tax_id ? item.tax_id.toLowerCase() : '';
-      const textThree = item.email_id ? item.email_id.toLowerCase() : '';
-      const textFour = item.mobile_no ? item.mobile_no.toLowerCase() : '';
+        : "";
+      const textTwo = item.tax_id ? item.tax_id.toLowerCase() : "";
+      const textThree = item.email_id ? item.email_id.toLowerCase() : "";
+      const textFour = item.mobile_no ? item.mobile_no.toLowerCase() : "";
       const textFifth = item.name.toLowerCase();
       const searchText = queryText.toLowerCase();
 
@@ -115,17 +119,17 @@ export default {
 
   created: function () {
     this.$nextTick(function () {
-      evntBus.$on('register_pos_profile', (pos_profile) => {
+      evntBus.$on("register_pos_profile", (pos_profile) => {
         this.pos_profile = pos_profile;
         this.get_customer_names();
       });
-      evntBus.$on('set_customer', (customer) => {
+      evntBus.$on("set_customer", (customer) => {
         this.customer = customer;
       });
-      evntBus.$on('add_customer_to_list', (customer) => {
+      evntBus.$on("add_customer_to_list", (customer) => {
         this.customers.push(customer);
       });
-      evntBus.$on('set_customer_readonly', (value) => {
+      evntBus.$on("set_customer_readonly", (value) => {
         this.readonly = value;
       });
     });
@@ -133,7 +137,7 @@ export default {
 
   watch: {
     customer() {
-      evntBus.$emit('update_customer', this.customer);
+      evntBus.$emit("update_customer", this.customer);
     },
   },
 };

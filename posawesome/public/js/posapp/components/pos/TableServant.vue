@@ -52,6 +52,7 @@ export default {
     servants: [],
     servant: "",
     readonly: false,
+    offline_pos: JSON.parse(localStorage.getItem("offline_pos")),
   }),
 
   methods: {
@@ -60,6 +61,8 @@ export default {
       if (vm.pos_profile.posa_local_storage && localStorage.table_storage) {
         vm.tables = JSON.parse(localStorage.getItem("table_storage"));
       }
+
+      if (vm.tables.length && this.offline_pos) return;
 
       frappe.call({
         method: "posawesome.posawesome.api.posapp.get_table_names",
@@ -82,6 +85,8 @@ export default {
       if (vm.pos_profile.posa_local_storage && localStorage.servant_storage) {
         vm.servants = JSON.parse(localStorage.getItem("servant_storage"));
       }
+
+      if (vm.servants.length && this.offline_pos) return;
 
       frappe.call({
         method: "posawesome.posawesome.api.posapp.get_servant_names",

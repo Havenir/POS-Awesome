@@ -411,6 +411,7 @@ export default {
     is_cashback: true,
     redeem_customer_credit: false,
     customer_credit_dict: [],
+    offline_pos: JSON.parse(localStorage.getItem("offline_pos")),
   }),
 
   methods: {
