@@ -24,6 +24,7 @@ from posawesome.posawesome.api.posapp_customization import get_available_credit
 from erpnext.accounts.doctype.sales_invoice.sales_invoice import get_bank_cash_account
 
 
+
 @frappe.whitelist()
 def get_opening_dialog_data():
     data = {}
@@ -205,7 +206,7 @@ def get_items(pos_profile):
                     }
                 )
                 result.append(row)
-
+                
     return result
 
 

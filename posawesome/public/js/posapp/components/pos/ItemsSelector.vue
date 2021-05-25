@@ -171,21 +171,29 @@ export default {
         console.log("No POS Profile");
         return;
       }
+
       const vm = this;
       this.loading = true;
-      if (vm.pos_profile.posa_local_storage && localStorage.items_storage) {
+
+      if ((vm.pos_profile.posa_local_storage || this.offline_pos) && localStorage.getItem("items_storage")) {
         vm.items = JSON.parse(localStorage.getItem("items_storage"));
         vm.loading = false;
+
+        if(this.offline_pos){
+         return;
+        }
       }
+
       frappe.call({
         method: "posawesome.posawesome.api.posapp.get_items",
         args: { pos_profile: vm.pos_profile },
         callback: function (r) {
           if (r.message) {
             vm.items = r.message;
+            update_items_details(vm.items);
             vm.loading = false;
             console.log("loadItmes");
-            if (vm.pos_profile.posa_local_storage) {
+            if (vm.pos_profile.posa_local_storage || offline_pos) {
               localStorage.setItem("items_storage", "");
               localStorage.setItem("items_storage", JSON.stringify(r.message));
             }
@@ -201,10 +209,8 @@ export default {
 
       if (this.offline_pos && localStorage.getItem("item_group")) {
         let stored_item_groups = JSON.parse(localStorage.getItem("item_group"));
-        console.log(stored_item_groups);
 
         stored_item_groups.map((item_group) => {
-          console.log(item_group);
           this.items_group.push(item_group);
         });
 
@@ -228,6 +234,7 @@ export default {
               r.message.forEach((element) => {
                 vm.items_group.push(element.name);
               });
+
               let item_groups = JSON.stringify(vm.items_group);
               localStorage.setItem("item_group", item_groups);
             }
@@ -312,6 +319,11 @@ export default {
               item.batch_no_data = updated_item.batch_no_data;
               item.item_uoms = updated_item.item_uoms;
             });
+
+            if (vm.pos_profile.posa_local_storage || offline_pos) {
+              localStorage.setItem("items_storage", "");
+              localStorage.setItem("items_storage", JSON.stringify(items));
+            }
           }
         },
       });

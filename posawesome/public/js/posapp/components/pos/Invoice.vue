@@ -5,7 +5,7 @@
       class="cards my-0 py-0 grey lighten-5"
     >
       <Customer></Customer>
-      <TableServant v-if="is_restaurant_mood"/>
+      <TableServant v-if="is_restaurant_mood" />
 
       <div class="my-0 py-0 overflow-y-auto" style="max-height: 55vh">
         <template @mouseover="style = 'cursor: pointer'">
@@ -595,12 +595,9 @@ export default {
         this.items.length
       );
     },
-    is_restaurant_mood(){
-      return (
-        this.pos_profile.restaurant_mood &&
-        this.pos_profile.dine_in
-      );
-    }
+    is_restaurant_mood() {
+      return this.pos_profile.restaurant_mood && this.pos_profile.dine_in;
+    },
   },
   methods: {
     remove_item(item) {
@@ -754,6 +751,32 @@ export default {
     save_draft_invoice() {
       const vm = this;
       const doc = this.get_invoice_doc();
+
+      // offline pos
+      if (this.offline_pos) {
+        this.invoice_doc = doc;
+        let cur_invoice = this.invoice_doc;
+        let d = new Date();
+        cur_invoice.name = "Sales Invoice " + Math.floor(Math.random() * 999);
+        cur_invoice.posting_date =
+          d.getDate() + "-" + (d.getMonth() + 1) + "-" + d.getFullYear();
+        cur_invoice.net_total = parseFloat(cur_invoice.total);
+        cur_invoice.grand_total = parseFloat(cur_invoice.total);
+        cur_invoice.total_taxes_and_charges = 0;
+
+        let pre_invoices = [];
+
+        if (localStorage.getItem("invoices")) {
+          pre_invoices = JSON.parse(localStorage.getItem("invoices"));
+        }
+
+        pre_invoices.push(cur_invoice);
+        pre_invoices = JSON.stringify(pre_invoices);
+        localStorage.setItem("invoices", pre_invoices);
+        return this.invoice_doc;
+      }
+
+      //  online pos
       frappe.call({
         method: "posawesome.posawesome.api.posapp.save_draft_invoice",
         args: { data: doc },
@@ -818,6 +841,15 @@ export default {
       return payments;
     },
     update_invoice(doc) {
+      if (this.offline_pos) {
+        let pre_invoices = JSON.parse(localStorage.getItem("invoices"));
+        let cur_invoice = pre_invoices.filter(
+          (invoice) => invoice.name == doc.name
+        );
+        this.invoice_doc = cur_invoice;
+        return this.invoice_doc;
+      }
+
       const vm = this;
       frappe.call({
         method: "posawesome.posawesome.api.posapp.update_invoice",
@@ -954,6 +986,18 @@ export default {
     },
     get_draft_invoices() {
       const vm = this;
+      if (this.offline_pos) {
+        return;
+        let invoices = JSON.parse(localStorage.getItem("invoices"));
+
+        let draft_invoices = invoices.filter(
+          (invoice) => invoice.docstatus == 0
+        );
+
+        evntBus.$emit("open_drafts", draft_invoices);
+        return;
+      }
+
       frappe.call({
         method: "posawesome.posawesome.api.posapp.get_draft_invoices",
         args: {
@@ -974,7 +1018,7 @@ export default {
       evntBus.$emit("show_payment", "false");
     },
     update_items_details(items) {
-      if (!items.length > 0) {
+      if (!items.length > 0 || this.offline_pos) {
         return;
       }
       const vm = this;
@@ -1002,6 +1046,10 @@ export default {
       });
     },
     update_item_detail(item) {
+      if (this.offline_pos) {
+        return;
+      }
+
       const vm = this;
       frappe.call({
         method: "posawesome.posawesome.api.posapp.get_item_detail",

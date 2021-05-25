@@ -72,7 +72,10 @@ export default {
         vm.customers = JSON.parse(localStorage.getItem("customer_storage"));
       }
 
-      if (vm.customers.length && this.offline_pos) return;
+      if (this.offline_pos && localStorage.getItem("customer_storage")) {
+        vm.customers = JSON.parse(localStorage.getItem("customer_storage"));
+        return;
+      }
 
       frappe.call({
         method: "posawesome.posawesome.api.posapp.get_customer_names",
@@ -81,7 +84,7 @@ export default {
           if (r.message) {
             vm.customers = r.message;
             console.log("loadCustomers");
-            if (vm.pos_profile.posa_local_storage) {
+            if (vm.pos_profile.posa_local_storage || vm.offline_pos) {
               localStorage.setItem("customer_storage", "");
               localStorage.setItem(
                 "customer_storage",

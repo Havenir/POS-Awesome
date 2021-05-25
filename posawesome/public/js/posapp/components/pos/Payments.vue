@@ -513,6 +513,19 @@ export default {
       this.back_to_invoice();
     },
     submit_invoice() {
+      if (this.offline_pos) {
+        let pre_invoices = JSON.parse(localStorage.getItem("invoices"));
+        pre_invoices = pre_invoices.filter(
+          (invoice) => invoice.name != this.invoice_doc.name
+        );
+
+        this.invoice_doc["paid"] = 1;
+        pre_invoices.push(this.invoice_doc);
+        pre_invoices = JSON.stringify(pre_invoices);
+        localStorage.setItem("invoices", pre_invoices);
+        return;
+      }
+
       let formData = this.invoice_doc;
       formData["total_change"] = -this.diff_payment;
       formData["paid_change"] = this.paid_change;
@@ -584,7 +597,7 @@ export default {
             letter_head;
           const printWindow = window.open(url, i);
 
-          if (!this.pos_profile.debug_invoice) { 
+          if (!this.pos_profile.debug_invoice) {
             printWindow.addEventListener(
               "load",
               function () {
